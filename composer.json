@@ -1,4 +1,14 @@
 {
+    "name": "stratedge/pumper",
+    "description": "A simple node/relationship entity framework built on Doctrine",
+    "authors": [
+        {
+            "name": "Jarret Byrne",
+            "email": "jarret@solvomedia.com",
+            "homepage": "http://www.jarretbyrne.com",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "doctrine/dbal": "^2.5",
         "symfony/console": "^2.7"
@@ -8,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Stratedge\\Adz\\": "src/"
+            "Stratedge\\Pumper\\": "src/"
         }
     }
 }
