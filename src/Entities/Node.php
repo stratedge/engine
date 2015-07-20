@@ -1,36 +1,31 @@
 <?php
 namespace Stratedge\Pumper\Entities;
 
-use Doctrine\DBAL\Connection;
 use PDO;
+use Stratedge\Pumper\Entity;
 
-class Node
+class Node extends Entity
 {
-    const TYPE_INT      = 'Int';
-    const TYPE_STR      = 'Str';
-    const TYPE_PASSWORD = 'Password';
-
-    protected $conn;
-
-    public function __construct(Connection $conn)
+    /**
+     * Returns the value of the id property
+     * 
+     * @return int|null
+     */
+    public function getId()
     {
-        $this->setConn($conn);
+        return $this->id;
     }
 
-    public function getConn()
-    {
-        return $this->conn;
-    }
 
-    public function setConn(Connection $conn)
-    {
-        $this->conn = $conn;
-        return $this;
-    }
-
+    /**
+     * Creates a new node record in the database with the given data array
+     * 
+     * @param  array  $data Associative array of properties and their values
+     * @return object       An object representing the newly created node
+     */
     public function create(array $data = [])
     {
-        $query = $this->getConn()->createQueryBuilder();
+        $query = $this->initQuery();
 
         $query->insert(
             $this->getTable()
@@ -61,11 +56,19 @@ class Node
         //Generate a new object and set its properties
         $obj = clone $this;
         $obj->addData($data);
-        $obj->id = $this->getConn()->lastInsertId();
+        $obj->id = (int) $this->getConn()->lastInsertId();
 
         return $obj;
     }
 
+
+    /**
+     * Returns the node object with property values matching the given property values and the
+     * lowest id value
+     * 
+     * @param  array       $data Associative array of properties and values
+     * @return object|null       Node object on success, otherwise null
+     */
     public function findOneBy(array $data = [])
     {
         $query = $this->buildFindQuery($data);
@@ -89,6 +92,13 @@ class Node
         return $obj;
     }
 
+
+    /**
+     * Returns node objects for each node with property values matching the given property values
+     * 
+     * @param  array  $data Associative array or properties and values
+     * @return array        Array of node objects on success, otherwise an empty array
+     */
     public function findBy(array $data = [])
     {
         $query = $this->buildFindQuery($data);
@@ -115,7 +125,15 @@ class Node
         return $objs;
     }
 
-    public function buildFindQuery(array $data = [])
+
+    /**
+     * Instantiates a new Doctrine Query Builder object and setups up the search and ordering
+     * parameters
+     * 
+     * @param  array                            $data Associative array of properties and values
+     * @return Doctrine\DBAL\Query\QueryBuilder       Doctrine Query Builder object
+     */
+    protected function buildFindQuery(array $data = [])
     {
         $query = $this->getConn()->createQueryBuilder();
 
@@ -136,50 +154,14 @@ class Node
         return $query;
     }
 
-    public function getTable()
+
+    /**
+     * Returns a string representing the column name for the node's ID in edge tables
+     * 
+     * @return string
+     */
+    public function getIdForEdge()
     {
-        return to_snake_case(
-            end(
-                explode('\\', get_class($this))
-            )
-        );
-    }
-
-    public function formatProperties(array $data = [])
-    {
-        $final = [];
-
-        foreach ($this->properties as $property => $params) {
-            if (isset($data[$property])) {
-                switch($this->getPropertyType($property)) {
-                    case self::TYPE_INT:
-                        $final[$property] = (int) $data[$property];
-                        break;
-                    case self::TYPE_STR:
-                        $final[$property] = (string) $data[$property];
-                        break;
-                }
-            }
-        }
-
-        return $final;
-    }
-
-    public function getPropertyType($property)
-    {
-        if (is_array($this->properties[$property])) {
-            //Handle params
-        } else {
-            return $this->properties[$property];
-        }
-    }
-
-    public function addData(array $data = [])
-    {
-        foreach (array_keys($this->properties) as $property) {
-            if (isset($data[$property])) {
-                $this->{$property} = $data[$property];
-            }
-        }
+        return $this->getTable() . '_id';
     }
 }

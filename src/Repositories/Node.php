@@ -5,16 +5,19 @@ use Stratedge\Pumper\Entities\Node as Entity;
 
 abstract class Node
 {
-    public static $node;
+    public static function register(Entity $n)
+    {
+        self::setNode($n);
+    }
 
     public static function getNode()
     {
-        return self::$node;
+        return static::$node;
     }
 
     public static function setNode(Entity $node)
     {
-        self::$node = $node;
+        static::$node = $node;
     }
 
     public static function create(array $data = [])
