@@ -23,7 +23,7 @@ Engine is not presently registered with Packagist, so it must be registered as a
 
 ## Usage
 
-```
+```php
 <?php
 	
 //Create Doctrine Connection
