@@ -1,8 +1,8 @@
 <?php
-namespace Stratedge\Pumper\Repositories;
+namespace Stratedge\Engine\Repositories;
 
-use Stratedge\Pumper\Entities\Edge as Entity;
-use Stratedge\Pumper\Entities\Node as NodeEntity;
+use Stratedge\Engine\Entities\Edge as Entity;
+use Stratedge\Engine\Entities\Node as NodeEntity;
 
 class Edge
 {

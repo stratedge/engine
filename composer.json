@@ -18,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Stratedge\\Pumper\\": "src/"
+            "Stratedge\\Engine\\": "src/"
         }
     }
 }

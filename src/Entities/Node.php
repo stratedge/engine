@@ -1,8 +1,8 @@
 <?php
-namespace Stratedge\Pumper\Entities;
+namespace Stratedge\Engine\Entities;
 
 use PDO;
-use Stratedge\Pumper\Entity;
+use Stratedge\Engine\Entity;
 
 class Node extends Entity
 {

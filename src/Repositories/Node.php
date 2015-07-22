@@ -1,7 +1,7 @@
 <?php
-namespace Stratedge\Pumper\Repositories;
+namespace Stratedge\Engine\Repositories;
 
-use Stratedge\Pumper\Entities\Node as Entity;
+use Stratedge\Engine\Entities\Node as Entity;
 
 abstract class Node
 {

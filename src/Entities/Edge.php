@@ -1,10 +1,10 @@
 <?php
-namespace Stratedge\Pumper\Entities;
+namespace Stratedge\Engine\Entities;
 
 use Doctrine\DBAL\Connection;
 use PDO;
-use Stratedge\Pumper\Entities\Node;
-use Stratedge\Pumper\Entity;
+use Stratedge\Engine\Entities\Node;
+use Stratedge\Engine\Entity;
 
 class Edge extends Entity
 {

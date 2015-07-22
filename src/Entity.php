@@ -1,5 +1,5 @@
 <?php
-namespace Stratedge\Pumper;
+namespace Stratedge\Engine;
 
 use Doctrine\DBAL\Connection;
 
