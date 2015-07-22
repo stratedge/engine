@@ -95,11 +95,11 @@ A node represents a single row in a database as an object in code. A user or a p
 
 ### Edges
 
-An edge is the relationship between 2 nodes. A relationship between a user and a post may be expressed as a hash table with the name posted_by as in code as a PostedBy edge object. Edges can have properties like nodes.
+An edge is the relationship between 2 nodes. A relationship between a user and a post may be expressed as a hash table with the name posted_by, and in code as a PostedBy edge object. Edges can have properties like nodes.
 
 ### Repositories
 
-Repositories are the go-to place for creating or finding nodes and edges. As static classes, their underlying implementations, such as which nodes and edges the repository represnets, must be registered for each repository, to make unit testing code much easier and logic visually clear.
+Repositories are the go-to place for creating or finding nodes and edges. As static classes, their underlying implementations, such as which nodes and edges the repository represents, must be registered for each repository, in order to make unit testing code much easier and logic visually clear.
 
 ### Built on Doctrine
 
