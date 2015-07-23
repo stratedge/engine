@@ -1,5 +1,5 @@
 {
-    "name": "stratedge/pumper",
+    "name": "stratedge/engine",
     "description": "A simple node/relationship entity framework built on Doctrine",
     "authors": [
         {
