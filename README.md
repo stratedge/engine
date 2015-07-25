@@ -10,12 +10,12 @@ Engine is not presently registered with Packagist, so it must be registered as a
 ```
 {
 	"require": {
-		"stratedge/engine": "@dev"
+		"stratedge/engine": "dev-master"
 	},
 	"repositories": [
 		{
 			"type": "vcs",
-			"url": "https://github.com/stratedge/engine"
+			"url": "https://github.com/stratedge/engine.git"
 		}
 	]
 }
