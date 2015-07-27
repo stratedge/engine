@@ -62,6 +62,40 @@ class Node extends Entity
     }
 
 
+    public function update(array $data = [])
+    {
+        $query = $this->initQuery();
+        
+        $query->update(
+            $this->getTable()
+        );
+
+        //Remove managed properties
+        unset($data['id'], $data['created'], $data['updated'], $data['deleted']);
+
+        $data = $this->formatProperties($data);
+
+        $data = array_merge($data, [
+            'updated' => time()
+        ]);
+
+        //Set insert properties
+        foreach ($data as $property => $value) {
+            $query->set(
+                $property,
+                $query->createNamedParameter($value)
+            );
+        }
+
+        //Execute the insert
+        $query->execute();
+
+        $this->addData($data);
+
+        return true;
+    }
+
+
     /**
      * Returns the node object with property values matching the given property values and the
      * lowest id value
