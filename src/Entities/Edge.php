@@ -117,8 +117,6 @@ class Edge extends Entity
             return null;
         }
 
-        $opposite = $this->opposites[$a->getIdForEdge()];
-
         $id = $result->fetch(PDO::FETCH_COLUMN);
 
         return $b->findOneBy(['id' => $id]);
@@ -133,8 +131,6 @@ class Edge extends Entity
         if ($result->rowCount() < 1) {
             return [];
         }
-
-        $opposite = $this->opposites[$a->getIdForEdge()];
 
         $objs = [];
 
