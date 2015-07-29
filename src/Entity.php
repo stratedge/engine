@@ -101,11 +101,11 @@ class Entity
      */
     public function getTable()
     {
-        return to_snake_case(
-            end(
-                explode('\\', get_class($this))
-            )
-        );
+        $ns_class = get_class($this);
+        $parts = explode('\\', $class);
+        $class = end($parts);
+
+        return to_snake_case($class);
     }
 
 
