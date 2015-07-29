@@ -88,6 +88,10 @@ class Node extends Entity implements JsonSerializable
             );
         }
 
+        $query->andWhere(
+            'id = ' . $query->createNamedParameter($this->getId())
+        );
+
         //Execute the insert
         $query->execute();
 
