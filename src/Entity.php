@@ -102,7 +102,7 @@ class Entity
     public function getTable()
     {
         $ns_class = get_class($this);
-        $parts = explode('\\', $class);
+        $parts = explode('\\', $ns_class);
         $class = end($parts);
 
         return to_snake_case($class);
