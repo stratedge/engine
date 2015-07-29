@@ -44,6 +44,66 @@ class Edge extends Entity
         return $obj;
     }
 
+    public function update(Node $a, Node $b = null)
+    {
+        $query = $this->getConn()->createQueryBuilder();
+
+        $query->update(
+            $this->getTable()
+        );
+
+        $data = [
+            'updated' => time()
+        ];
+
+        $data[$a->getIdForEdge()] = $a->getId();
+        if (!is_null($b)) {
+            $data[$b->getIdForEdge()] = $b->getId();
+        }
+
+        foreach ($data as $property => $value) {
+            $query->set(
+                $property,
+                $query->createNamedParameter($value)
+            );
+        }
+
+        $query->execute();
+
+        $this->addData($data);
+
+        return $this;
+    }
+
+    public function findOneBy(Node $a)
+    {
+        $query = $this->getConn()->createQueryBuilder();
+
+        $query->select('*')
+              ->from(
+                    $this->getTable()
+                )
+              ->orderBy('id', 'ASC');
+
+        $query->setFirstResult(0)
+              ->setMaxResults(1);
+
+        $query->andWhere(
+            $a->getTable() . '_id' . ' = ' . $query->createNamedParameter($a->getId())
+        );
+
+        $result = $query->execute();
+
+        if ($result->rowCount() < 1) {
+            return null;
+        }
+
+        $obj = clone $this;
+        $obj->addData($result->fetch(PDO::FETCH_ASSOC));
+
+        return $obj;
+    }
+
     public function findOppositeNode(Node $a, Node $b)
     {
         $query = $this->buildFindOppositeQuery($a, $b);

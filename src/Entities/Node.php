@@ -1,10 +1,11 @@
 <?php
 namespace Stratedge\Engine\Entities;
 
+use JsonSerializable;
 use PDO;
 use Stratedge\Engine\Entity;
 
-class Node extends Entity
+class Node extends Entity implements JsonSerializable
 {
     /**
      * Returns the value of the id property
@@ -197,5 +198,16 @@ class Node extends Entity
     public function getIdForEdge()
     {
         return $this->getTable() . '_id';
+    }
+
+    public function jsonSerialize()
+    {
+        $data = [];
+
+        foreach (array_keys($this->properties) as $property) {
+            $data[$property] = $this->{$property};
+        }
+
+        return $data;
     }
 }

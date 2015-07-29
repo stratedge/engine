@@ -38,6 +38,11 @@ class Edge
         return self::getEdge()->create($a, $b);
     }
 
+    public static function findOneBy(NodeEntity $a)
+    {
+        return self::getEdge()->findOneBy($a);
+    }
+
     public static function findOppositeNode(NodeEntity $a)
     {
         return self::getEdge()->findOppositeNode($a, self::getOpposite($a));
