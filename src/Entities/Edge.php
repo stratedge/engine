@@ -68,6 +68,10 @@ class Edge extends Entity
             );
         }
 
+        $query->andWhere(
+            'id = ' . $query->createNamedParameter($this->getId())
+        );
+
         $query->execute();
 
         $this->addData($data);

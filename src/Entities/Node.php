@@ -8,17 +8,6 @@ use Stratedge\Engine\Entity;
 class Node extends Entity implements JsonSerializable
 {
     /**
-     * Returns the value of the id property
-     * 
-     * @return int|null
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
-
-
-    /**
      * Creates a new node record in the database with the given data array
      * 
      * @param  array  $data Associative array of properties and their values

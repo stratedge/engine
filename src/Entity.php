@@ -17,6 +17,17 @@ class Entity
 
 
     /**
+     * Returns the value of the id property
+     * 
+     * @return int|null
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+
+    /**
      * Retrieve the database connection object from the conn property
      * 
      * @return Doctrine\DBAL\Connection Doctrine Connection object
