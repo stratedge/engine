@@ -2,11 +2,21 @@
 namespace Stratedge\Engine;
 
 use Doctrine\DBAL\Connection;
+use Stratedge\Toolbox\StringUtils;
 
 class Entity
 {
-    const TYPE_INT      = 'Int';
-    const TYPE_STR      = 'Str';
+    const TYPE_INT          = 'Integer'; //Deprecated
+    const TYPE_STR          = 'String'; //Deprecated
+    const TYPE_INTEGER      = 'Integer';
+    const TYPE_FLOAT        = 'Float';
+    const TYPE_STRING       = 'String';
+    const TYPE_TEXT         = 'Text';
+    const TYPE_DATETIME     = 'DateTime';
+    const TYPE_TIMESTAMP    = 'Timestamp';
+    const TYPE_DATE         = 'Date';
+    const TYPE_TIME         = 'Time';
+    const TYPE_BOOL         = 'Bool';
 
     protected $conn;
 
@@ -116,7 +126,7 @@ class Entity
         $parts = explode('\\', $ns_class);
         $class = end($parts);
 
-        return to_snake_case($class);
+        return StringUtils::toSnakeCase($class);
     }
 
 

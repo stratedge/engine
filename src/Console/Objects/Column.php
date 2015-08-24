@@ -3,6 +3,8 @@ namespace Stratedge\Engine\Console\Objects;
 
 class Column
 {
+    use \Stratedge\Engine\Console\Traits\ParseTemplate;
+
     protected $name;
     protected $type;
 
@@ -12,37 +14,61 @@ class Column
         $this->type = $type;
     }
 
+
+    /**
+     * Return an array representation of the column's data
+     * 
+     * @return array
+     */
     public function toArray()
     {
         return [$this->name, $this->type];
     }
 
+
+    /**
+     * Returns a string representing the column's declaration statement
+     * 
+     * @return string
+     */
     public function parseDeclaration()
     {
-        $str = file_get_contents(__DIR__ . '/../Templates/node.column.declaration.tpl');
-
-        return strtr($str, [
-            '$name' => $this->name
-        ]);
+        return $this->parseTemplate(
+            __DIR__ . '/../Templates/column.declaration.tpl',
+            [
+                'name' => $this->name
+            ]
+        );
     }
 
+
+    /**
+     * Return a string representing the column's definition statement
+     * 
+     * @return string
+     */
     public function parseDefinition()
     {
-        $str = file_get_contents(__DIR__ . '/../Templates/node.column.definition.tpl');
-
         switch ($this->type) {
-            case 'integer':
-                $type = 'INT';
-                break;
             case 'varchar':
-            case 'text':
-                $type = 'STR';
+                $type = 'STRING';
+                break;
+            case 'date_time':
+                $type = 'DATETIME';
+                break;
+            case 'boolean':
+                $type = 'BOOL';
+            default:
+                $type = strtoupper($this->type);
                 break;
         }
 
-        return strtr($str, [
-            '$name' => $this->name,
-            '$type' => $type
-        ]);
+        return $this->parseTemplate(
+            __DIR__ . '/../Templates/column.definition.tpl',
+            [
+                'name' => $this->name,
+                'type' => $type
+            ]
+        );
     }
 }

@@ -1,0 +1,1 @@
+        '$name' => ['type' => self::TYPE_$type]
