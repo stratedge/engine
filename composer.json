@@ -1,6 +1,18 @@
 {
     "name": "stratedge/engine",
     "description": "A simple node/relationship entity framework built on Doctrine",
+    "type": "library",
+    "keywords": [
+        "ORM",
+        "models",
+        "model",
+        "node",
+        "nodes",
+        "edge",
+        "edges",
+        "graph-like"
+    ],
+    "license": "MIT",
     "authors": [
         {
             "name": "Jarret Byrne",
@@ -11,7 +23,9 @@
     ],
     "require": {
         "doctrine/dbal": "^2.5",
-        "symfony/console": "^2.7"
+        "symfony/console": "^2.7",
+        "symfony/filesystem": "^2.7",
+        "stratedge/toolbox": "^0"
     },
     "require-dev": {
         "raveren/kint": "1.0.*@dev"
