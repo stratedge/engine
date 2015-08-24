@@ -6,5 +6,5 @@ if (!$autoloader()) {
     die('uh-oh');
 }
 
-$app = new Stratedge\Engine\Console\Application();
+$app = new \Stratedge\Engine\Console\Application();
 $app->run();
