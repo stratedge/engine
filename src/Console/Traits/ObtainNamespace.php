@@ -21,7 +21,10 @@ trait ObtainNamespace
         OutputInterface $output,
         EntityInterface $entity
     ) {
-        $question = new Question('<comment>Class namespace: </comment>');
+        $question = new Question(
+            '<comment>Class namespace (default ' . $this->getDefaultNamespace() . '): </comment>',
+            $this->getDefaultNamespace()
+        );
 
         while (empty($namespace) || is_numeric($namespace)) {
             $namespace = $this->getHelper('question')->ask($input, $output, $question);

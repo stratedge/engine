@@ -3,8 +3,10 @@ namespace Stratedge\Engine\Console\Commands\Create\Entity;
 
 use ReflectionClass;
 use Stratedge\Engine\Console\Commands\Create\Entity;
+use Stratedge\Engine\Console\Config;
 use Stratedge\Toolbox\FileUtils;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -13,6 +15,25 @@ class Edge extends Entity
     use \Stratedge\Engine\Console\Traits\Columns;
     use \Stratedge\Engine\Console\Traits\FindFile;
     use \Stratedge\Engine\Console\Traits\ObtainNamespace;
+
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultDirectory()
+    {
+        return Config::getDefaultEdgeDirectory();
+    }
+
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultNamespace()
+    {
+        return Config::getDefaultEdgeNamespace();
+    }
+
 
     protected function configure()
     {
@@ -23,12 +44,14 @@ class Edge extends Entity
                 InputArgument::REQUIRED,
                 'Name of the edge class to create'
              )
-             ->addArgument(
-                'directory',
-                InputArgument::REQUIRED,
-                'Directoy into which the new edge will be placed'
+             ->addOption(
+                'dir',
+                'd',
+                InputOption::VALUE_REQUIRED,
+                'Directoy into which the new node will be placed'
              );
     }
+
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {

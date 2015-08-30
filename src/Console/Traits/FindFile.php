@@ -2,6 +2,7 @@
 namespace Stratedge\Engine\Console\Traits;
 
 use SplFileInfo;
+use Stratedge\Engine\Console\Config;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
@@ -18,7 +19,7 @@ trait FindFile
     {
         $index = $index == 1 ? 'Primary' : 'Secondary';
         $found = false;
-        $current_path = getcwd() . DIRECTORY_SEPARATOR;
+        $current_path = getcwd() . DIRECTORY_SEPARATOR . Config::getDefaultNodeDirectory();
 
         while ($found != true) {
             system('clear');

@@ -57,6 +57,10 @@ abstract class Entity extends Command
      */
     public function setDirectory($directory)
     {
+        if (empty($directory)) {
+            $directory = $this->getDefaultDirectory();
+        }
+
         //If the last character is a slash, remove it
         $this->directory = substr($directory, -1) == '/' ?
             substr($directory, 0, -1) :
@@ -64,6 +68,18 @@ abstract class Entity extends Command
 
         return $this;
     }
+
+
+    /**
+     * @return string|null
+     */
+    abstract public function getDefaultDirectory();
+
+
+    /**
+     * @return string|null
+     */
+    abstract public function getDefaultNamespace();
 
 
     /**
@@ -85,6 +101,9 @@ abstract class Entity extends Command
     }
 
 
+    /**
+     * @return string
+     */
     public function getFilePath()
     {
         return $this->getDirectory() .
@@ -110,7 +129,7 @@ abstract class Entity extends Command
 
         //Store the directory provided in the command's input
         $this->setDirectory(
-            $input->getArgument('directory')
+            $input->getOption('dir')
         );
     }
 

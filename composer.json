@@ -25,7 +25,8 @@
         "doctrine/dbal": "^2.5",
         "symfony/console": "^2.7",
         "symfony/filesystem": "^2.7",
-        "stratedge/toolbox": "^0"
+        "stratedge/toolbox": "^0",
+        "symfony/yaml": "^2.7"
     },
     "require-dev": {
         "raveren/kint": "1.0.*@dev"

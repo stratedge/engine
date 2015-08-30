@@ -2,7 +2,9 @@
 namespace Stratedge\Engine\Console\Commands\Create\Entity;
 
 use Stratedge\Engine\Console\Commands\Create\Entity;
+use Stratedge\Engine\Console\Config;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -10,6 +12,25 @@ class Node extends Entity
 {
     use \Stratedge\Engine\Console\Traits\Columns;
     use \Stratedge\Engine\Console\Traits\ObtainNamespace;
+
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultDirectory()
+    {
+        return Config::getDefaultNodeDirectory();
+    }
+
+
+    /**
+     * @return string|null
+     */
+    public function getDefaultNamespace()
+    {
+        return Config::getDefaultNodeNamespace();
+    }
+
 
     protected function configure()
     {
@@ -20,12 +41,14 @@ class Node extends Entity
                 InputArgument::REQUIRED,
                 'Name of the node class to create'
              )
-             ->addArgument(
-                'directory',
-                InputArgument::REQUIRED,
+             ->addOption(
+                'dir',
+                'd',
+                InputOption::VALUE_REQUIRED,
                 'Directoy into which the new node will be placed'
              );
     }
+
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
