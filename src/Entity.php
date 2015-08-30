@@ -1,7 +1,7 @@
 <?php
 namespace Stratedge\Engine;
 
-use Doctrine\DBAL\Connection;
+use Stratedge\Engine\Database;
 use Stratedge\Toolbox\StringUtils;
 
 class Entity
@@ -18,129 +18,256 @@ class Entity
     const TYPE_TIME         = 'Time';
     const TYPE_BOOL         = 'Bool';
 
-    protected $conn;
 
-    public function __construct(Connection $conn)
+    public function __call($name, $arguments)
     {
-        $this->setConn($conn);
+        if (strpos($name, 'get') === 0) {
+            $name = $this->fromGetter($name);
+            return $this->$name;
+        } else if (strpos($name, 'set') === 0) {
+            $name = $this->fromSetter($name);
+            $this->$name = $arguments[0];
+            return;
+        }
+
+        //@todo Throw an exception (but which kind?)
+    }
+
+
+    public function __get($name)
+    {
+        if (property_exists($this, $name)) {
+            $func = $this->toGetter($name);
+            return $this->$func($value);
+        }
+
+        //@todo Throw an exception (but which kind?)
+    }
+
+
+    public function __set($name, $value)
+    {
+        if (property_exists($this, $name)) {
+            $func = $this->toSetter($name);
+            return $this->$func($value);
+        }
+        
+        //@todo Throw an exception (but which kind?)
     }
 
 
     /**
-     * Returns the value of the id property
-     * 
-     * @return int|null
+     * @param  array           $data
+     * @return EntityInterface
      */
-    public function getId()
+    public static function create(array $data = [])
     {
-        return $this->id;
+        $obj = new static;
+
+        $obj->addData($data);
+
+        $obj->save();
+
+        return $obj;
+    }
+
+
+    public function save()
+    {
+        if (is_null($this->getPrimaryKeyValue())) {
+            $this->saveNew();
+        } else {
+            $this->saveExisting();
+        }
+    }
+
+
+    public function saveNew()
+    {
+        $data = $this->getColumnData();
+
+        $adapter = Database::getAdapter();
+
+        $id = $adapter->insert(
+            $this->getTable(),
+            $this->getColumnData()
+        );
+
+        $this->setPrimaryKeyValue($id);
+
+        return $this;
+    }
+
+
+    public function saveExisting()
+    {
+
     }
 
 
     /**
-     * Retrieve the database connection object from the conn property
+     * Given an associative array of data, calls the getter for each key of the
+     * array to set the column values
      * 
-     * @return Doctrine\DBAL\Connection Doctrine Connection object
+     * @param  array $data
+     * @return self
      */
-    public function getConn()
+    public function addData(array $data = [])
     {
-        return $this->conn;
-    }
+        foreach ($data as $name => $value) {
+            $name = $this->toSetter($name);
+            $this->$name($value);
+        }
 
-
-    /**
-     * Sets the given database connection object to the conn property
-     * 
-     * @param Doctrine\DBAL\Connection $conn Doctrine Connection object
-     */
-    public function setConn(Connection $conn)
-    {
-        $this->conn = $conn;
         return $this;
     }
 
 
     /**
-     * Returns a new Doctrine Query Builder object
+     * Returns the name of the column marked as the entity's primary key
      * 
-     * @return Doctrine\DBAL\Query\QueryBuilder
+     * @return string
      */
-    public function initQuery()
+    public function getPrimaryKey()
     {
-        return $this->getConn()->createQueryBuilder();
+        return isset($this->primary_key) ? $this->primary_key : 'id';
     }
 
 
     /**
-     * Returns an associative array of property values converted to the correct data type, excluding
-     * properties not defined for the entity's schema
+     * Returns the value of the column defined as the entity's primary key
      * 
-     * @param  array  $data Associative array of properties and values
-     * @return array        Associative array of properties and values
+     * @return mixed
      */
-    public function formatProperties(array $data = [])
+    public function getPrimaryKeyValue()
     {
-        $final = [];
-
-        foreach ($this->properties as $property => $params) {
-            if (isset($data[$property])) {
-                switch($this->getPropertyType($property)) {
-                    case self::TYPE_INT:
-                        $final[$property] = (int) $data[$property];
-                        break;
-                    case self::TYPE_STR:
-                        $final[$property] = (string) $data[$property];
-                        break;
-                }
-            }
-        }
-
-        return $final;
+        $primary_key = $this->getPrimaryKey();
+        $func = $this->toGetter($primary_key);
+        return $this->$func();
     }
 
 
     /**
-     * Retrieves the data type for the given property from the defined schema
+     * Sets the value of the property representing the table's primary key
      * 
-     * @param  string $property The property to retrieve the data type for
-     * @return string           The data type as expressed as a value of the self::TYPE_* constants
+     * @param  string|int $id
+     * @return mixed
      */
-    public function getPropertyType($property)
+    public function setPrimaryKeyValue($id)
     {
-        if (is_array($this->properties[$property])) {
-            //Handle params
-        } else {
-            return $this->properties[$property];
-        }
+        $primary_key = $this->getPrimaryKey();
+        $func = $this->toSetter($primary_key);
+        return $this->$func($id);
     }
 
 
     /**
-     * Returns the name of the table for the given entity
+     * Returns the name of the table the entity uses
      * 
-     * @return string The name of the table for the given entity
+     * @return string
      */
     public function getTable()
     {
-        $ns_class = get_class($this);
-        $parts = explode('\\', $ns_class);
-        $class = end($parts);
-
-        return StringUtils::toSnakeCase($class);
+        return isset($this->table) ? $this->table : array_slice(explode('\\', get_class()), -1);
     }
 
 
     /**
-     * Sets the properties defined in the given associative array to values provided
+     * Converts a snake-case column name to the getter function name for that
+     * column
      * 
-     * @param array $data Associative array of properties and their values
+     * @param  string $name
+     * @return string
      */
-    public function addData(array $data = [])
+    public function toGetter($name)
     {
-        foreach (array_keys($this->properties) as $property) {
-            if (isset($data[$property])) {
-                $this->{$property} = $data[$property];
+        return 'get' . StringUtils::toCamelCase($name, true);
+    }
+
+
+    /**
+     * Converts a snake-case column name to the setter function name for that
+     * column
+     * 
+     * @param  string $name
+     * @return string
+     */
+    public function toSetter($name)
+    {
+        return 'set' . StringUtils::toCamelCase($name, true);
+    }
+
+
+    /**
+     * Converts a camel-case getter function name for a column back to the
+     * snake-case name of the column
+     * 
+     * @param  string $name
+     * @return string
+     */
+    public function fromGetter($name)
+    {
+        return StringUtils::toSnakeCase(substr($name, 3));
+    }
+
+
+    /**
+     * Converts a camel-case setter function name for a column back to the
+     * snake-case name of the column
+     * 
+     * @param  string $name
+     * @return string
+     */
+    public function fromSetter($name)
+    {
+        return StringUtils::toSnakeCase(substr($name, 3));
+    }
+
+
+    /**
+     * Returns a list of columns defined for the entity
+     * 
+     * @return array
+     */
+    public function getColumns()
+    {
+        return array_keys($this->columns);
+    }
+
+
+    /**
+     * Returns a list of the columns defined for the entity and the values set
+     * for those columns if a value is set at all
+     * 
+     * @return array
+     */
+    public function getColumnData()
+    {
+        $data = [];
+
+        foreach ($this->getColumns() as $column) {
+            //Get the value
+            $func = $this->toGetter($column);
+            $value = $this->$func();
+
+            //Use the value if it is not null
+            if (!is_null($value)) {
+                $data[$column] = $value;
             }
         }
+
+        return $data;
+    }
+
+
+    /**
+     * Returns the data-type of the provided snake-case column name
+     * 
+     * @param  string      $name
+     * @return string|null       If the column does not exist, null is returned
+     */
+    public function getColumnType($name)
+    {
+        return $this->columns[$name][0];
     }
 }
