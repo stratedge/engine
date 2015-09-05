@@ -25,7 +25,9 @@ Engine is not presently registered with Packagist, so it must be registered as a
 
 ```php
 <?php
-	
+
+//--- BEGIN SETUP ---//
+
 //Create Doctrine Connection
 $config = new Configuration();
 
@@ -35,54 +37,42 @@ $connectionParams = [
 
 $connection = Doctrine\DBAL\DriverManager::getConnection($connectionParams, $config);
 
-//--- BEGIN SETUP ---//
-
-//Setup nodes with database connection
-$user = new Your\Namespace\Entities\Nodes\User($connection);
-$post = new Your\Namespace\Entities\Nodes\Post($connection);
-
-//Setup node repositories with reference to the correct node
-Your\Namespace\Repositories\Nodes\User::register($user);
-Your\Namespace\Repositories\Nodes\Post::register($post);
-
-//Setup edges with database connection
-$posted_by = new Your\Namespace\Entities\Edges\PostedBy($connection);
-
-//Setup edge repositories with reference to the correct edge and related nodes
-Your\Namespace\Repositories\Edges\PostedBy::register($posted_by, $post, $user);
+//Setup the database adapter
+$doctrine = new Stratedge\Engine\Adapters\Doctrine($connection);
+Stratedge\Engine\Database::register($doctrine);
 
 //--- END SETUP ---//
 
 //Create a new user node
-$new_user = Your\Namespace\Repositories\Nodes\User::create([
+$new_user = Your\Namespace\User::create([
 	'first_name' => 'John',
 	'last_name' => 'Smith'
 ]);
 
 //Create a new post node
-$new_post = Your\Namespace\Repositories\Nodes\Post::create([
+$new_post = Your\Namespace\Post::create([
 	'post_body' => 'Lorem ipsum dolor sit amet'
 ]);
 
 //Associate the user to the post
-$new_posted_by = Your\Namespace\Repositories\Edges\PostedBy::create($new_post, $new_user);
+$new_posted_by = Your\Namespace\PostUser::create($new_post, $new_user);
 
 //Find all posts by user
-$posts = Your\Namespace\Repositories\Edges\PostedBy::findOppositeNodes($new_user);
+$posts = Your\Namespace\PostUser::findOppositeNodes($new_user);
 
 //Find user that posted post
-$the_user = Your\Namespace\Repositories\Edges\PostedBy::findOppositeNode($new_post);
+$the_user = Your\Namespace\PostedBy::findOppositeNode($new_post);
 
 //Load a particular post
-$specific_post = Your\Namespace\Repositories\Nodes\Post::find(12);
+$specific_post = Your\Namespace\Post::find(12);
 
 //Load all users by a property value or several property values
-$users_with_name = Your\Namespace\Repositories\Nodes\User::findBy([
+$users_with_name = Your\Namespace\User::findBy([
 	'first_name' => 'John'
 ]);
 
 //Load the first user found by property value or several property values
-$user_with_name = Your\Namespace\Repositories\Nodes\User::findOneBy([
+$user_with_name = Your\Namespace\User::findOneBy([
 	'first_name' => 'John'
 ]);
 ```
@@ -97,13 +87,9 @@ A node represents a single row in a database as an object in code. A user or a p
 
 An edge is the relationship between 2 nodes. A relationship between a user and a post may be expressed as a hash table with the name posted_by, and in code as a PostedBy edge object. Edges can have properties like nodes.
 
-### Repositories
+### Built on Doctrine (If You Want)
 
-Repositories are the go-to place for creating or finding nodes and edges. As static classes, their underlying implementations, such as which nodes and edges the repository represents, must be registered for each repository, in order to make unit testing code much easier and logic visually clear.
-
-### Built on Doctrine
-
-Engine depends on the tried-and-true Doctrine DBAL layer.
+Engine works on the tried-and-true Doctrine DBAL layer out of the box, but as the library employs database adapters that implement a common interface, feel free to hook in whatever you'd like!
 
 ## Roadmap
 
