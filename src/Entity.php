@@ -4,6 +4,7 @@ namespace Stratedge\Engine;
 use DateTime;
 use Stratedge\Engine\Database;
 use Stratedge\Engine\Interfaces\Entity as EntityInterface;
+use Stratedge\Toolbox\NumberUtils;
 use Stratedge\Toolbox\StringUtils;
 
 abstract class Entity implements EntityInterface
@@ -434,7 +435,7 @@ abstract class Entity implements EntityInterface
             return $value;
         }
 
-        if (is_numeric($value)) {
+        if (NumberUtils::isOnlyNumbers($value)) {
             $dt = new DateTime();
             $dt->setTimestamp($value);
         } else {
