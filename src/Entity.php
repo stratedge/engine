@@ -1,10 +1,12 @@
 <?php
 namespace Stratedge\Engine;
 
+use DateTime;
 use Stratedge\Engine\Database;
+use Stratedge\Engine\Interfaces\Entity as EntityInterface;
 use Stratedge\Toolbox\StringUtils;
 
-class Entity
+abstract class Entity implements EntityInterface
 {
     const TYPE_INT          = 'Integer'; //Deprecated
     const TYPE_STR          = 'String'; //Deprecated
@@ -19,6 +21,13 @@ class Entity
     const TYPE_BOOL         = 'Bool';
 
 
+    /**
+     * Magic method used to support getters and setters
+     * 
+     * @param  string $name
+     * @param  array  $arguments
+     * @return mixed
+     */
     public function __call($name, $arguments)
     {
         if (strpos($name, 'get') === 0) {
@@ -26,7 +35,7 @@ class Entity
             return $this->$name;
         } else if (strpos($name, 'set') === 0) {
             $name = $this->fromSetter($name);
-            $this->$name = $arguments[0];
+            $this->$name = $this->formatData($name, $arguments[0]);
             return;
         }
 
@@ -34,6 +43,12 @@ class Entity
     }
 
 
+    /**
+     * Magic method used to support getters
+     * 
+     * @param  string $name
+     * @return mixed
+     */
     public function __get($name)
     {
         if (property_exists($this, $name)) {
@@ -45,6 +60,13 @@ class Entity
     }
 
 
+    /**
+     * Magic method used to support setters
+     * 
+     * @param  string $name
+     * @param  mixed  $value
+     * @return mixed
+     */
     public function __set($name, $value)
     {
         if (property_exists($this, $name)) {
@@ -57,34 +79,47 @@ class Entity
 
 
     /**
-     * @param  array           $data
-     * @return EntityInterface
+     * Persists data in the database, handling both creation and updating
+     * 
+     * @return self
      */
-    public static function create(array $data = [])
-    {
-        $obj = new static;
-
-        $obj->addData($data);
-
-        $obj->save();
-
-        return $obj;
-    }
-
-
     public function save()
     {
         if (is_null($this->getPrimaryKeyValue())) {
-            $this->saveNew();
+            return $this->saveNew();
         } else {
-            $this->saveExisting();
+            return $this->saveExisting();
         }
     }
 
 
-    public function saveNew()
+    /**
+     * Creates a new record in the database
+     * 
+     * @return self
+     */
+    protected function saveNew()
     {
-        $data = $this->getColumnData();
+        if (
+            $this->hasColumn('created') &&
+            $this->isColumnDateType('created')
+        ) {
+            $this->setCreated(date('Y-m-d H:i:s'));
+        }
+
+        if (
+            $this->hasColumn('updated') &&
+            $this->isColumnDateType('updated')
+        ) {
+            $this->setUpdated(date('Y-m-d H:i:s'));
+        }
+
+        if (
+            $this->hasColumn('deleted') &&
+            $this->isColumnDateType('deleted')
+        ) {
+            $this->setDeleted('0000-00-00 00:00:00');
+        }
 
         $adapter = Database::getAdapter();
 
@@ -99,9 +134,34 @@ class Entity
     }
 
 
-    public function saveExisting()
+    /**
+     * Updates an existing record in the database
+     * 
+     * @return self
+     */
+    protected function saveExisting()
     {
+        if (
+            $this->hasColumn('updated') &&
+            $this->isColumnDateType('updated')
+        ) {
+            $this->setUpdated(date('Y-m-d H:i:s'));
+        }
 
+        $adapter = Database::getAdapter();
+
+        $id = $adapter->update(
+            $this->getTable(),
+            $this->getColumnData(),
+            [
+                $this->getPrimaryKey() . ' = :id',
+                'bind' => [
+                    $this->getPrimaryKey() => $this->getPrimaryKeyValue()
+                ]
+            ]
+        );
+
+        return $this;
     }
 
 
@@ -112,7 +172,7 @@ class Entity
      * @param  array $data
      * @return self
      */
-    public function addData(array $data = [])
+    public function hydrate(array $data = [])
     {
         foreach ($data as $name => $value) {
             $name = $this->toSetter($name);
@@ -168,7 +228,12 @@ class Entity
      */
     public function getTable()
     {
-        return isset($this->table) ? $this->table : array_slice(explode('\\', get_class()), -1);
+        if (isset($this->table)) {
+            return $this->table;
+        } else {
+            $table = end(explode('\\', get_class($this)));
+            return StringUtils::toSnakeCase($table);
+        }            
     }
 
 
@@ -179,7 +244,7 @@ class Entity
      * @param  string $name
      * @return string
      */
-    public function toGetter($name)
+    protected function toGetter($name)
     {
         return 'get' . StringUtils::toCamelCase($name, true);
     }
@@ -192,7 +257,7 @@ class Entity
      * @param  string $name
      * @return string
      */
-    public function toSetter($name)
+    protected function toSetter($name)
     {
         return 'set' . StringUtils::toCamelCase($name, true);
     }
@@ -205,7 +270,7 @@ class Entity
      * @param  string $name
      * @return string
      */
-    public function fromGetter($name)
+    protected function fromGetter($name)
     {
         return StringUtils::toSnakeCase(substr($name, 3));
     }
@@ -218,7 +283,7 @@ class Entity
      * @param  string $name
      * @return string
      */
-    public function fromSetter($name)
+    protected function fromSetter($name)
     {
         return StringUtils::toSnakeCase(substr($name, 3));
     }
@@ -269,5 +334,123 @@ class Entity
     public function getColumnType($name)
     {
         return $this->columns[$name][0];
+    }
+
+
+    /**
+     * Returns true if the column is defined, otherwise false
+     * 
+     * @param  string $name
+     * @return bool
+     */
+    public function hasColumn($name)
+    {
+        return in_array($name, $this->getColumns());
+    }
+
+
+    /**
+     * Returns true if the given column is expected to contain a date, otherwise
+     * false
+     * 
+     * @param  string $name The name of the column to evaluate
+     * @return bool
+     */
+    protected function isColumnDateType($name)
+    {
+        return in_array(
+            $this->getColumnType($name),
+            [
+                self::TYPE_DATETIME,
+                self::TYPE_TIMESTAMP,
+                self::TYPE_DATE
+            ]
+        );
+    }
+
+
+    /**
+     * Returns the correct format for the value provided depending on the type
+     * of the given column
+     * 
+     * @param  string $name  The name of the column to format data for
+     * @param  mixed  $value The value to format
+     * @return mixed
+     */
+    protected function formatData($name, $value)
+    {
+        if (!$this->hasColumn($name)) return $value;
+
+        switch ($this->getColumnType($name)) {
+            case self::TYPE_INT:
+            case self::TYPE_INTEGER:
+                return (int) $value;
+            case self::TYPE_STR:
+            case self::TYPE_STRING:
+            case self::TYPE_TEXT:
+                return (string) $value;
+            case self::TYPE_FLOAT:
+                return (float) $value;
+            case self::TYPE_DATETIME:
+            case self::TYPE_TIMESTAMP:
+            case self::TYPE_DATE:
+            case self::TYPE_TIME:
+                return $this->formatDate($value, $this->getColumnType($name));
+            case self::TYPE_BOOL:
+                return (bool) $value;
+        }
+
+        return $value;
+    }
+
+
+    /**
+     * Given a timestamp or date string, and a column type, returns the correct
+     * representation of the date/time for the column type
+     * 
+     * @param  string     $value
+     * @param  string|int $type
+     * @return string|int
+     */
+    protected function formatDate($value, $type)
+    {
+        //An empty SQL date/time needs to be handled as a special case
+        if (
+            preg_match(
+                '/^(0000-00-00|0000-00-00 00:00:00|00:00:00)$/',
+                $value
+            ) === 1
+        ) {
+            switch ($type) {
+                case self::TYPE_DATETIME:
+                case self::TYPE_TIMESTAMP:
+                    return '0000-00-00 00:00:00';
+                case self::TYPE_DATE:
+                    return '0000-00-00';
+                case self::TYPE_TIME:
+                    return '00:00:00';
+            }
+
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            $dt = new DateTime();
+            $dt->setTimestamp($value);
+        } else {
+            $dt = new DateTime($value);
+        }
+
+        switch ($type) {
+            case self::TYPE_DATETIME:
+            case self::TYPE_TIMESTAMP:
+                return $dt->format('Y-m-d H:i:s');
+            case self::TYPE_DATE:
+                return $dt->format('Y-m-d');
+            case self::TYPE_TIME:
+                return $dt->format('H:i:s');
+        }
+
+        return $value;
     }
 }
