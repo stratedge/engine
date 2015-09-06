@@ -2,6 +2,7 @@
 namespace Stratedge\Engine;
 
 use DateTime;
+use InvalidArgumentException;
 use Stratedge\Engine\Database;
 use Stratedge\Engine\Interfaces\Entity as EntityInterface;
 use Stratedge\Toolbox\NumberUtils;
@@ -453,5 +454,91 @@ abstract class Entity implements EntityInterface
         }
 
         return $value;
+    }
+
+
+    /**
+     * Attempts to find the row with the given id and returns an entity with
+     * the row's properties.
+     * If a row cannot be found, null is returned.
+     * 
+     * @param  int                  $id
+     * @return EntityInterface|null
+     */
+    public static function find($id)
+    {
+        $obj = Factory::assemble(get_called_class());
+
+        $adapter = Database::getAdapter();
+
+        $data = $adapter->select(
+            $obj->getTable(),
+            '*',
+            [
+                $obj->getPrimaryKey() . ' = :id',
+                'bind' => [
+                    'id' => $id
+                ]
+            ]
+        );
+
+        if (!count($data)) return null;
+
+        $obj->hydrate($data[0]);
+
+        return $obj;
+    }
+
+
+    /**
+     * Attempts to find all the rows for the given ids and return an array of
+     * entities with the rows' properties.
+     * If no rows can be found, an empty array is returned.
+     * 
+     * @param  int[]             $ids An array of ids
+     * @return EntityInterface[]
+     */
+    public static function findMany(array $ids)
+    {
+        if (empty($ids)) {
+            throw new InvalidArgumentException(
+                'Entity ids passed to Entity::findMany cannot be empty'
+            );
+        }
+
+        $obj = Factory::assemble(get_called_class());
+
+        $adapter = Database::getAdapter();
+
+        $binding = sprintf(
+            '%s in (%s)',
+            $obj->getPrimaryKey(),
+            implode(', ', array_pad([], count($ids), '?'))
+        );
+
+        $data = $adapter->select(
+            $obj->getTable(),
+            '*',
+            [
+                $binding,
+                'bind' => $ids
+            ]
+        );
+
+        unset($obj);
+
+        if (empty($data)) {
+            return [];
+        }
+
+        $objs = [];
+
+        foreach ($data as $obj_data) {
+            $obj = Factory::assemble(get_called_class());
+            $obj->hydrate($obj_data);
+            $objs[] = $obj;
+        }
+
+        return $objs;
     }
 }

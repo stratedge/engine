@@ -100,4 +100,26 @@ interface Entity
      * @return bool
      */
     public function hasColumn($name);
+
+
+    /**
+     * Attempts to find the row with the given id and returns an entity with
+     * the row's properties.
+     * If a row cannot be found, null is returned.
+     * 
+     * @param  int                  $id
+     * @return EntityInterface|null
+     */
+    public static function find($id);
+
+
+    /**
+     * Attempts to find all the rows for the given ids and return an array of
+     * entities with the rows' properties.
+     * If no rows can be found, an empty array is returned.
+     * 
+     * @param  int[]             $ids An array of ids
+     * @return EntityInterface[]
+     */
+    public static function findMany(array $ids);
 }

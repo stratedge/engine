@@ -83,4 +83,17 @@ class Doctrine implements DatabaseAdapterInterface
 
         return $qb;
     }
+
+
+    public function select($table, $columns = '*', array $options = [])
+    {
+        $qb = $this->getConn()->createQueryBuilder();
+
+        $qb->select($columns)
+           ->from($table);
+
+        $qb = $this->buildQueryOptions($qb, $options);
+
+        return $qb->execute()->fetchAll();
+    }
 }
