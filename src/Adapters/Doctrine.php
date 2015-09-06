@@ -73,6 +73,18 @@ class Doctrine implements DatabaseAdapterInterface
 
         if (isset($options['conditions'])) {
             $qb->where($options['conditions']);
+        } else {
+            $conds = array_diff(array_keys($options), [
+                'conditions',
+                'bind',
+                'limit',
+                'order'
+            ]);
+
+            foreach ($conds as $key) {
+                $options['bind'][$key] = $options[$key];
+                $qb->andWhere(sprintf('%s = :%s', $key, $key));
+            }
         }
 
         if (isset($options['bind'])) {
