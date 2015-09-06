@@ -81,6 +81,34 @@ class Doctrine implements DatabaseAdapterInterface
             }
         }
 
+        if (isset($options['limit'])) {
+            if (is_string($options['limit']) || is_int($options['limit'])) {
+                $options['limit'] = [0, $options['limit']];
+            }
+
+            $qb->setFirstResult($options['limit'][0])
+               ->setMaxResults($options['limit'][1]);
+        }
+
+        if (isset($options['order'])) {
+
+            if (is_string($options['order'])) {
+                $order = [];
+            
+                foreach (explode(',', $options['order']) as $stmt) {
+                    $parts = explode(' ', $stmt);
+                    if (count($parts) === 1) {
+                        $parts[1] = null;
+                    }
+                    $order[] = $parts;
+                }
+            }
+
+            foreach($order as $stmt) {
+                $qb->orderBy($stmt[0], $stmt[1]);
+            }
+        }
+
         return $qb;
     }
 
