@@ -541,4 +541,95 @@ abstract class Entity implements EntityInterface
 
         return $objs;
     }
+
+
+    /**
+     * Given a query options array, attemtps to find matching rows and returns
+     * an array of entities representing matching rows.
+     * 
+     * @param  array|string      $options
+     * @return EntityInterface[]
+     */
+    public static function findBy($options)
+    {
+        $obj = Factory::assemble(get_called_class());
+
+        $adapter = Database::getAdapter();
+
+        if (is_string($options)) {
+            $options = ['conditions' => $options];    
+        }
+
+        if (!is_array($options)) {
+            throw new InvalidArgumentException(
+                'Options passed to Entity::findBy should be a string or array'
+            );
+        }
+
+        $options = array_merge(
+            [
+                'order' => $obj->getPrimaryKey() . ' ASC'
+            ],
+            $options
+        );
+
+        $data = $adapter->select(
+            $obj->getTable(),
+            '*',
+            $options
+        );
+
+        unset($obj);
+
+        if (empty($data)) {
+            return [];
+        }
+
+        $objs = [];
+
+        foreach ($data as $obj_data) {
+            $obj = Factory::assemble(get_called_class());
+            $obj->hydrate($obj_data);
+            $objs[] = $obj;
+        }
+
+        return $objs;
+    }
+
+
+    /**
+     * Given a query options array, attempts to find the first matching row and
+     * returns an entity representing the matching row.
+     * If a row cannot be found, null will be returned.
+     * 
+     * @param  array|string      $options
+     * @return EntityInterface[]
+     */
+    public static function findOneBy($options)
+    {
+        if (is_string($options)) {
+            $options = [$options];
+        }
+
+        if (!is_array($options)) {
+            throw new InvalidArgumentException(
+                'Options passed to Entity::findOneBy should be a string or array'
+            );
+        }
+
+        $options = array_merge(
+            $options,
+            [
+                'limit' => 1
+            ]
+        );
+
+        $objs = static::findBy($options);
+
+        if (empty($objs)) {
+            return null;
+        }
+
+        return $objs[0];
+    }
 }

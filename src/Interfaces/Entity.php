@@ -122,4 +122,25 @@ interface Entity
      * @return EntityInterface[]
      */
     public static function findMany(array $ids);
+
+
+    /**
+     * Given a query options array, attemtps to find matching rows and returns
+     * an array of entities representing matching rows.
+     * 
+     * @param  array|string      $options
+     * @return EntityInterface[]
+     */
+    public static function findBy($options);
+
+
+    /**
+     * Given a query options array, attempts to find the first matching row and
+     * returns an entity representing the matching row.
+     * If a row cannot be found, null will be returned.
+     * 
+     * @param  array|string      $options
+     * @return EntityInterface[]
+     */
+    public static function findOneBy($options);
 }
