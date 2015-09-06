@@ -1,6 +1,7 @@
 <?php
 namespace Stratedge\Engine\Entities;
 
+use Stratedge\Engine\Database;
 use Stratedge\Engine\Entity;
 use Stratedge\Engine\Factory;
 use Stratedge\Engine\Interfaces\Entities\Node as NodeInterface;
