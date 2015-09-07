@@ -5,6 +5,7 @@ use DateTime;
 use InvalidArgumentException;
 use Stratedge\Engine\Database;
 use Stratedge\Engine\Interfaces\Entity as EntityInterface;
+use Stratedge\Engine\Options;
 use Stratedge\Toolbox\NumberUtils;
 use Stratedge\Toolbox\StringUtils;
 
@@ -471,15 +472,14 @@ abstract class Entity implements EntityInterface
 
         $adapter = Database::getAdapter();
 
+        $options = Options::assemble()->addCondFromBind([
+            $obj->getPrimaryKey() => $id
+        ]);
+
         $data = $adapter->select(
             $obj->getTable(),
             '*',
-            [
-                $obj->getPrimaryKey() . ' = :id',
-                'bind' => [
-                    'id' => $id
-                ]
-            ]
+            $options
         );
 
         if (!count($data)) return null;
@@ -502,7 +502,7 @@ abstract class Entity implements EntityInterface
     {
         if (empty($ids)) {
             throw new InvalidArgumentException(
-                'Entity ids passed to Entity::findMany cannot be empty'
+                'Array of entity ids passed to Entity::findMany cannot be empty'
             );
         }
 
@@ -516,14 +516,9 @@ abstract class Entity implements EntityInterface
             implode(', ', array_pad([], count($ids), '?'))
         );
 
-        $data = $adapter->select(
-            $obj->getTable(),
-            '*',
-            [
-                $binding,
-                'bind' => $ids
-            ]
-        );
+        $options = Options::assemble($binding, $ids);
+
+        $data = $adapter->select($obj->getTable(), '*', $options);
 
         unset($obj);
 
@@ -547,10 +542,10 @@ abstract class Entity implements EntityInterface
      * Given a query options array, attemtps to find matching rows and returns
      * an array of entities representing matching rows.
      * 
-     * @param  array|string      $options
+     * @param  Options           $options
      * @return EntityInterface[]
      */
-    public static function findBy($options)
+    public static function findBy(Options $options)
     {
         $obj = Factory::assemble(get_called_class());
 
@@ -560,18 +555,7 @@ abstract class Entity implements EntityInterface
             $options = ['conditions' => $options];    
         }
 
-        if (!is_array($options)) {
-            throw new InvalidArgumentException(
-                'Options passed to Entity::findBy should be a string or array'
-            );
-        }
-
-        $options = array_merge(
-            [
-                'order' => $obj->getPrimaryKey() . ' ASC'
-            ],
-            $options
-        );
+        $options->prependOrder($obj->getPrimaryKey(), Options::DIR_ASC);
 
         $data = $adapter->select(
             $obj->getTable(),
@@ -602,27 +586,12 @@ abstract class Entity implements EntityInterface
      * returns an entity representing the matching row.
      * If a row cannot be found, null will be returned.
      * 
-     * @param  array|string      $options
+     * @param  Options           $options
      * @return EntityInterface[]
      */
-    public static function findOneBy($options)
+    public static function findOneBy(Options $options)
     {
-        if (is_string($options)) {
-            $options = [$options];
-        }
-
-        if (!is_array($options)) {
-            throw new InvalidArgumentException(
-                'Options passed to Entity::findOneBy should be a string or array'
-            );
-        }
-
-        $options = array_merge(
-            $options,
-            [
-                'limit' => 1
-            ]
-        );
+        $options->max(1);
 
         $objs = static::findBy($options);
 
@@ -631,5 +600,57 @@ abstract class Entity implements EntityInterface
         }
 
         return $objs[0];
+    }
+
+
+    /**
+     * Retrieves a related node by relating a property of this object to the id
+     * of another.
+     * 
+     * @param  string          $this_id
+     * @param  string          $class
+     * @param  string          $that_id
+     * @param  Options|null    $options
+     * @return EntityInterface
+     */
+    public function belongsTo(
+        $this_id,
+        $class,
+        $that_id,
+        Options $options = null
+    ) {
+        $id = $this->{$this->toGetter($this_id)}();
+
+        if (is_null($options)) {
+            $options = Options::assemble();
+        }
+
+        $options->addCond($that_id . ' = :' . $that_id, [$that_id => $id]);
+
+        return $class::findOneBy($options);
+    }
+
+
+    /**
+     * Attempts to retrieve all nodes related to the current node by relating
+     * the id of this node to a property of the opposite nodes.
+     * 
+     * @param  string            $this_id
+     * @param  string            $class
+     * @param  string            $that_id
+     * @param  Options|null      $options
+     * @return EntityInterface[]
+     */
+    public function hasMany($this_id, $class, $that_id, Options $options = null)
+    {
+        $id = $this->{$this->toGetter($this_id)}();
+
+        if (is_null($options)) {
+            $options = Options::assemble();
+        }
+
+        $options->addCond($that_id . ' = :' . $that_id, [$that_id => $id]);
+
+        return $class::findBy($options);
     }
 }

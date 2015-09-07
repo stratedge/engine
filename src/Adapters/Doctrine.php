@@ -4,6 +4,7 @@ namespace Stratedge\Engine\Adapters;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Stratedge\Engine\Interfaces\Adapters\Database as DatabaseAdapterInterface;
+use Stratedge\Engine\Options;
 
 class Doctrine implements DatabaseAdapterInterface
 {
@@ -65,75 +66,43 @@ class Doctrine implements DatabaseAdapterInterface
     }
 
 
-    public function buildQueryOptions(QueryBuilder $qb, array $options = [])
-    {
-        if (isset($options[0]) && !isset($options['conditions'])) {
-            $options['conditions'] = $options[0];
-        }
-
-        if (isset($options['conditions'])) {
-            $qb->where($options['conditions']);
-        } else {
-            $conds = array_diff(array_keys($options), [
-                'conditions',
-                'bind',
-                'limit',
-                'order'
-            ]);
-
-            foreach ($conds as $key) {
-                $options['bind'][$key] = $options[$key];
-                $qb->andWhere(sprintf('%s = :%s', $key, $key));
-            }
-        }
-
-        if (isset($options['bind'])) {
-            foreach ($options['bind'] as $id => $value) {
-                $qb->setParameter($id, $value);
-            }
-        }
-
-        if (isset($options['limit'])) {
-            if (is_string($options['limit']) || is_int($options['limit'])) {
-                $options['limit'] = [0, $options['limit']];
-            }
-
-            $qb->setFirstResult($options['limit'][0])
-               ->setMaxResults($options['limit'][1]);
-        }
-
-        if (isset($options['order'])) {
-
-            if (is_string($options['order'])) {
-                $order = [];
-            
-                foreach (explode(',', $options['order']) as $stmt) {
-                    $parts = explode(' ', $stmt);
-                    if (count($parts) === 1) {
-                        $parts[1] = null;
-                    }
-                    $order[] = $parts;
-                }
-            }
-
-            foreach($order as $stmt) {
-                $qb->orderBy($stmt[0], $stmt[1]);
-            }
-        }
-
-        return $qb;
-    }
-
-
-    public function select($table, $columns = '*', array $options = [])
+    public function select($table, $columns = '*', Options $options = null)
     {
         $qb = $this->getConn()->createQueryBuilder();
 
         $qb->select($columns)
            ->from($table);
 
-        $qb = $this->buildQueryOptions($qb, $options);
+        if (!is_null($options)) {
+            $qb = $this->buildQueryOptions($qb, $options);
+        }
 
         return $qb->execute()->fetchAll();
+    }
+
+
+    protected function buildQueryOptions(QueryBuilder $qb, Options $options)
+    {
+        foreach ($options->getConds() as $cond) {
+            $qb->andWhere($cond);
+        }
+
+        foreach ($options->getBinds() as $key => $value) {
+            $qb->setParameter($key, $value);
+        }
+
+        if ($options->hasMax()) {
+            $qb->setMaxResults($options->getMax());
+        }
+
+        if ($options->hasOffset()) {
+            $qb->setFirstResult($options->getOffset());
+        }
+
+        foreach ($options->getOrders() as $order) {
+            $qb->orderBy($order[0], $order[1]);
+        }
+
+        return $qb;
     }
 }
