@@ -466,7 +466,7 @@ abstract class Entity implements EntityInterface
      * @param  int                  $id
      * @return EntityInterface|null
      */
-    public static function find($id)
+    public static function findOne($id)
     {
         $obj = Factory::assemble(get_called_class());
 
@@ -498,7 +498,7 @@ abstract class Entity implements EntityInterface
      * @param  int[]             $ids An array of ids
      * @return EntityInterface[]
      */
-    public static function findMany(array $ids)
+    public static function find(array $ids)
     {
         if (empty($ids)) {
             throw new InvalidArgumentException(
@@ -606,6 +606,7 @@ abstract class Entity implements EntityInterface
     /**
      * Retrieves a related node by relating a property of this object to the id
      * of another.
+     * Used for 1-n relationships, where the current node is one of the n.
      * 
      * @param  string          $this_id
      * @param  string          $class
@@ -634,6 +635,7 @@ abstract class Entity implements EntityInterface
     /**
      * Attempts to retrieve all nodes related to the current node by relating
      * the id of this node to a property of the opposite nodes.
+     * Used for 1-n relationships, where the current node is the 1.
      * 
      * @param  string            $this_id
      * @param  string            $class
