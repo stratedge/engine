@@ -5,6 +5,7 @@ use DateTime;
 use InvalidArgumentException;
 use Stratedge\Engine\Database;
 use Stratedge\Engine\Interfaces\Entity as EntityInterface;
+use Stratedge\Engine\Interfaces\Options as OptionsInterface;
 use Stratedge\Engine\Options;
 use Stratedge\Toolbox\NumberUtils;
 use Stratedge\Toolbox\StringUtils;
@@ -549,7 +550,7 @@ abstract class Entity implements EntityInterface
     {
         $obj = Factory::assemble(get_called_class());
 
-        $adapter = Database::getAdapter();
+        $adapter = Database::getAdapter(); 
 
         if (is_string($options)) {
             $options = ['conditions' => $options];    
@@ -654,5 +655,27 @@ abstract class Entity implements EntityInterface
         $options->addCond($that_id . ' = :' . $that_id, [$that_id => $id]);
 
         return $class::findBy($options);
+    }
+
+
+    public static function query()
+    {
+        return Factory::assemble('\\Stratedge\\Engine\\Query', [get_called_class()]);
+    }
+
+
+    public static function select($columns = '*', OptionsInterface $options = null)
+    {
+        $obj = Factory::assemble(get_called_class());
+
+        $adapter = Database::getAdapter();
+
+        $result = $adapter->select(
+            $obj->getTable(),
+            $columns,
+            $options
+        );
+
+        return $result;
     }
 }

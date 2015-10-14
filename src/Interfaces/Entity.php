@@ -111,7 +111,7 @@ interface Entity
      * @param  int                  $id
      * @return EntityInterface|null
      */
-    public static function find($id);
+    public static function findOne($id);
 
 
     /**
@@ -122,7 +122,7 @@ interface Entity
      * @param  int[]             $ids An array of ids
      * @return EntityInterface[]
      */
-    public static function findMany(array $ids);
+    public static function find(array $ids);
 
 
     /**

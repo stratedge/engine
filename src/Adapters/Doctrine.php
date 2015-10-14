@@ -3,8 +3,9 @@ namespace Stratedge\Engine\Adapters;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Stratedge\Engine\Factory;
 use Stratedge\Engine\Interfaces\Adapters\Database as DatabaseAdapterInterface;
-use Stratedge\Engine\Options;
+use Stratedge\Engine\Interfaces\Options as OptionsInterface;
 
 class Doctrine implements DatabaseAdapterInterface
 {
@@ -66,41 +67,100 @@ class Doctrine implements DatabaseAdapterInterface
     }
 
 
-    public function select($table, $columns = '*', Options $options = null)
+    public function select($table, $columns = '*', OptionsInterface $options = null)
     {
         $qb = $this->getConn()->createQueryBuilder();
 
         $qb->select($columns)
-           ->from($table);
+           ->from($table, $options ? $options->getAlias() : null);
 
         if (!is_null($options)) {
             $qb = $this->buildQueryOptions($qb, $options);
         }
 
-        return $qb->execute()->fetchAll();
+        $result = Factory::assemble('\\Stratedge\\Engine\\Result', [$qb->execute()]);
+
+        return $result;
     }
 
 
-    protected function buildQueryOptions(QueryBuilder $qb, Options $options)
+    protected function buildQueryOptions(QueryBuilder $qb, OptionsInterface $options)
     {
-        foreach ($options->getConds() as $cond) {
-            $qb->andWhere($cond);
+        //Construct the JOIN clause(s)
+        foreach ($options->getJoin() as $join) {
+            $table = $options->resolveJoinTable($join);
+            $alias = $options->resolveJoinAlias($join);
+            $on = $options->resolveJoinOn($join);
+            $from_alias = $options->resolveJoinFromAlias($join);
+
+            switch (true) {
+                case $options->isJoin($join):
+                    $qb->join($from_alias, $table, $alias, $on);
+                    break;
+                case $options->isInnerJoin($join):
+                    $qb->innerJoin($from_alias, $table, $alias, $on);
+                    break;
+                case $options->isLeftJoin($join):
+                    $qb->leftJoin($from_alias, $table, $alias, $on);
+                    break;
+                case $options->isRightJoin($join):
+                    $qb->rightJoin($from_alias, $table, $alias, $on);
+                    break;
+            }
         }
 
-        foreach ($options->getBinds() as $key => $value) {
+        //Construct the WHERE clause
+        foreach ($options->getWhere() as $where) {
+            if ($options->isAnd($where)) {
+                $qb->andWhere(
+                    $options->resolveCondition($where)
+                );
+            } elseif ($options->isOr($where)) {
+                $qb->orWhere(
+                    $options->resolveCondition($where)
+                );
+            }
+        }
+
+        //Bind data
+        foreach ($options->getData() as $key => $value) {
             $qb->setParameter($key, $value);
         }
 
-        if ($options->hasMax()) {
+        //Construct the GROUP BY clause
+        foreach ($options->getGroupBy() as $group_by) {
+            $qb->addGroupBy($group_by);
+        }
+
+        //Construct the HAVING clause
+        foreach ($options->getHaving() as $having) {
+            if ($options->isAnd($having)) {
+                $qb->andHaving(
+                    $options->resolveCondition($having)
+                );
+            } elseif ($options->isOr($having)) {
+                $qb->orHaving(
+                    $options->resolveCondition($having)
+                );
+            }
+        }
+
+        //Construct the ORDER BY clause
+        foreach ($options->getOrderBy() as $order_by) {
+            $qb->orderBy(
+                $options->resolveColumn($order_by),
+                $options->resolveDirection($order_by)
+            );
+        }
+
+        //Set the max rows to return
+        if ($options->getMax()) {
             $qb->setMaxResults($options->getMax());
         }
 
-        if ($options->hasOffset()) {
+        //Set the row offset
+        if ($options->getOffset()) {
             $qb->setFirstResult($options->getOffset());
-        }
-
-        foreach ($options->getOrders() as $order) {
-            $qb->orderBy($order[0], $order[1]);
         }
 
         return $qb;
