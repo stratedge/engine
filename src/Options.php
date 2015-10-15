@@ -365,6 +365,17 @@ class Options implements OptionsInterface
     }
 
 
+    public function prependOrderBy($column, $dir = self::DIR_ASC)
+    {
+        $this->order_by = array_merge(
+            [['column' => $column, 'dir' => $dir]],
+            $this->order_by
+        );
+
+        return $this;
+    }
+
+
     /**
      * LIMIT METHODS
      */

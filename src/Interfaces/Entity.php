@@ -3,7 +3,7 @@ namespace Stratedge\Engine\Interfaces;
 
 use Doctrine\DBAL\Connection;
 use Doctring\DBAL\Query\QueryBuilder;
-use Stratedge\Engine\Options;
+use Stratedge\Engine\Interfaces\Options as OptionsInterface;
 
 interface Entity
 {
@@ -132,7 +132,7 @@ interface Entity
      * @param  array|string      $options
      * @return EntityInterface[]
      */
-    public static function findBy(Options $options);
+    public static function findBy(OptionsInterface $options);
 
 
     /**
@@ -143,5 +143,5 @@ interface Entity
      * @param  array|string      $options
      * @return EntityInterface[]
      */
-    public static function findOneBy(Options $options);
+    public static function findOneBy(OptionsInterface $options);
 }

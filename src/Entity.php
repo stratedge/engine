@@ -6,7 +6,6 @@ use InvalidArgumentException;
 use Stratedge\Engine\Database;
 use Stratedge\Engine\Interfaces\Entity as EntityInterface;
 use Stratedge\Engine\Interfaces\Options as OptionsInterface;
-use Stratedge\Engine\Options;
 use Stratedge\Toolbox\NumberUtils;
 use Stratedge\Toolbox\StringUtils;
 
@@ -552,19 +551,15 @@ abstract class Entity implements EntityInterface
      * @param  Options           $options
      * @return EntityInterface[]
      */
-    public static function findBy(Options $options)
+    public static function findBy(OptionsInterface $options)
     {
         $obj = Factory::assemble(get_called_class());
 
         $adapter = Database::getAdapter();
 
-        if (is_string($options)) {
-            $options = ['conditions' => $options];
-        }
+        $options->prependOrderBy($obj->getPrimaryKey());
 
-        $options->prependOrder($obj->getPrimaryKey(), Options::DIR_ASC);
-
-        $data = $adapter->select(
+        $results = $adapter->select(
             $obj->getTable(),
             '*',
             $options
@@ -572,15 +567,15 @@ abstract class Entity implements EntityInterface
 
         unset($obj);
 
-        if (empty($data)) {
+        if ($results->rowCount() < 1) {
             return [];
         }
 
         $objs = [];
 
-        foreach ($data as $obj_data) {
+        while ($data = $results->getArray()) {
             $obj = Factory::assemble(get_called_class());
-            $obj->hydrate($obj_data);
+            $obj->hydrate($data);
             $objs[] = $obj;
         }
 
@@ -596,7 +591,7 @@ abstract class Entity implements EntityInterface
      * @param  Options           $options
      * @return EntityInterface[]
      */
-    public static function findOneBy(Options $options)
+    public static function findOneBy(OptionsInterface $options)
     {
         $options->max(1);
 
@@ -625,7 +620,7 @@ abstract class Entity implements EntityInterface
         $this_id,
         $class,
         $that_id,
-        Options $options = null
+        OptionsInterface $options = null
     ) {
         $id = $this->{$this->toGetter($this_id)}();
 
@@ -650,7 +645,7 @@ abstract class Entity implements EntityInterface
      * @param  Options|null      $options
      * @return EntityInterface[]
      */
-    public function hasMany($this_id, $class, $that_id, Options $options = null)
+    public function hasMany($this_id, $class, $that_id, OptionsInterface $options = null)
     {
         $id = $this->{$this->toGetter($this_id)}();
 
