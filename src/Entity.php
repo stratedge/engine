@@ -475,21 +475,21 @@ abstract class Entity implements EntityInterface
 
         $adapter = Database::getAdapter();
 
-        $options = Options::assemble()->addCondFromBind([
-            $obj->getPrimaryKey() => $id
-        ]);
+        $options = Factory::assemble('\\Stratedge\\Engine\\Options')
+            ->where($obj->getPrimaryKey() . ' = :' . $obj->getPrimaryKey())
+            ->data($obj->getPrimaryKey(), $id);
 
-        $data = $adapter->select(
+        $result = $adapter->select(
             $obj->getTable(),
             '*',
             $options
         );
 
-        if (!count($data)) {
+        if ($result->rowCount() < 1) {
             return null;
         }
 
-        $obj->hydrate($data[0]);
+        $obj->hydrate($result->getArray());
 
         return $obj;
     }
