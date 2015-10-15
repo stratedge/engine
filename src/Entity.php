@@ -237,7 +237,7 @@ abstract class Entity implements EntityInterface
         } else {
             $table = end(explode('\\', get_class($this)));
             return StringUtils::toSnakeCase($table);
-        }            
+        }
     }
 
 
@@ -383,7 +383,9 @@ abstract class Entity implements EntityInterface
      */
     protected function formatData($name, $value)
     {
-        if (!$this->hasColumn($name)) return $value;
+        if (!$this->hasColumn($name)) {
+            return $value;
+        }
 
         switch ($this->getColumnType($name)) {
             case self::TYPE_INT:
@@ -483,7 +485,9 @@ abstract class Entity implements EntityInterface
             $options
         );
 
-        if (!count($data)) return null;
+        if (!count($data)) {
+            return null;
+        }
 
         $obj->hydrate($data[0]);
 
@@ -550,10 +554,10 @@ abstract class Entity implements EntityInterface
     {
         $obj = Factory::assemble(get_called_class());
 
-        $adapter = Database::getAdapter(); 
+        $adapter = Database::getAdapter();
 
         if (is_string($options)) {
-            $options = ['conditions' => $options];    
+            $options = ['conditions' => $options];
         }
 
         $options->prependOrder($obj->getPrimaryKey(), Options::DIR_ASC);
