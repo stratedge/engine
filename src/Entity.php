@@ -506,38 +506,40 @@ abstract class Entity implements EntityInterface
     public static function find(array $ids)
     {
         if (empty($ids)) {
-            throw new InvalidArgumentException(
-                'Array of entity ids passed to Entity::findMany cannot be empty'
-            );
+            return [];
         }
 
         $obj = Factory::assemble(get_called_class());
 
         $adapter = Database::getAdapter();
 
-        $binding = sprintf(
+        $where = sprintf(
             '%s in (%s)',
             $obj->getPrimaryKey(),
             implode(', ', array_pad([], count($ids), '?'))
         );
 
-        $options = Options::assemble($binding, $ids);
+        $options = Factory::assemble('\\Stratedge\\Engine\\Options')
+            ->where($where)
+            ->data($ids);
 
-        $data = $adapter->select($obj->getTable(), '*', $options);
+        $results = $adapter->select($obj->getTable(), '*', $options);
 
         unset($obj);
 
-        if (empty($data)) {
+        if ($results->rowCount() < 1) {
             return [];
         }
 
         $objs = [];
 
-        foreach ($data as $obj_data) {
+        while ($data = $results->getArray()) {
             $obj = Factory::assemble(get_called_class());
-            $obj->hydrate($obj_data);
+            $obj->hydrate($data);
             $objs[] = $obj;
         }
+
+        unset($obj);
 
         return $objs;
     }
